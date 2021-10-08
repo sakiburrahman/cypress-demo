@@ -1,0 +1,43 @@
+# This work flow will do a clean installtaion of node dependencies, build the source code and run the tests
+
+name: Generate Cypress Test Report
+on:
+  push:
+  branches:
+    - 'master'
+
+jobs:
+  cypress-test:
+    name: Run on Chrome 94
+    runs-on: ubuntu-18.04
+    container: node14.17.0-chrome88-ff89
+    steps:
+      - uses: actions/checkout@v2
+      
+      - name: Install cypress and verify
+        run: |
+          npm i
+          $(npm bin)/cypress verify
+        
+      - name: Run cypress tests
+        run: npm run tests:chrome
+        continue-on-error: false
+        
+      - name: Copy test execution videos and screenshoots
+        run: 
+          mkdir public
+          cp - r cypress/videos public/videos
+          cp - r cypress/screenshoots public/scheenshots
+          
+      - name: Merge test report
+        run: npm run combine:report
+        
+      - name: Merge HTML report
+        run: npm run cmbine:report
+        
+      - name: Deploy report page to GitHub page
+        uses: peaceiris/actions-gh-pages@v3
+        with: 
+          github_token: ${{secrets.GITHUB_TOKEN}}
+          publish_dir: ./public
+      
